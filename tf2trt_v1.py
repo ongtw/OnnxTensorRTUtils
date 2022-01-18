@@ -22,6 +22,7 @@ def my_input_gen_256():
     yield (inp,)
 
 PRECISION = "FP16"
+GPU_RAM_lG = 1000000000
 GPU_RAM_2G = 2000000000
 GPU_RAM_4G = 4000000000
 GPU_RAM_6G = 6000000000
@@ -33,6 +34,7 @@ MODEL_PRECISION = {
     "FP32": trt_convert.TrtPrecisionMode.FP32,
 }
 MODEL_RAM = {
+    1: 1000000000,
     2: 2000000000,
     4: 4000000000,
     6: 6000000000,
@@ -110,6 +112,6 @@ def convert_model(model_code: str, prec: str, gpu_ram: int):
 
 if __name__ == "__main__":
     for model_code in MODEL_MAP.keys():
-        convert_model(model_code, "FP16", 4)
+        convert_model(model_code, "FP16", 1)
 
 

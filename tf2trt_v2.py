@@ -21,18 +21,20 @@ def my_input_gen_256():
     inp = np.zeros((1, 256, 256, 3)).astype(np.int32)
     yield (inp,)
 
+#################################
+# Set below params for conversion
+# Todo: proper CLI argparse
+#################################
 PRECISION = "FP16"
-GPU_RAM_2G = 2000000000
-GPU_RAM_4G = 4000000000
-GPU_RAM_6G = 6000000000
-GPU_RAM_8G = 8000000000
-GPU_RAM = "4G"
+GPU_RAM = 2         # values = { 1, 2, 4 }
+
 MODEL_PRECISION = {
     "INT8": trt_convert.TrtPrecisionMode.INT8,
     "FP16": trt_convert.TrtPrecisionMode.FP16,
     "FP32": trt_convert.TrtPrecisionMode.FP32,
 }
 MODEL_RAM = {
+    1: 1000000000,
     2: 2000000000,
     4: 4000000000,
     6: 6000000000,
@@ -117,6 +119,6 @@ def convert_model(model_code: str, prec: str, gpu_ram: int):
 
 if __name__ == "__main__":
     for model_code in MODEL_MAP.keys():
-        convert_model(model_code, "FP16", 4)
+        convert_model(model_code, PRECISION, GPU_RAM)
 
 
