@@ -167,67 +167,6 @@ def postprocess(
     return bboxes, classes, scores
 
 
-def post_process_model_result(pred: np.array):
-    # pred are the raw predictions from model, shape=(M, N)
-    # decode pred == [x, y, w, h, conf, (cls_conf of 80 COCO classes)]
-    pred[:, :4] = xywh2xyxy(pred[:, :4])
-    pred_class = pred[:, 5 : 5 + NUM_CLASSES]
-    print(f"pred_class.shape={pred_class.shape}")
-    # print(pred_class)
-    class_pred = np.argmax(pred_class, axis=1)
-    class_score = pred_class[np.arange(len(pred_class)), class_pred]
-    print(f"class_score.shape={class_score.shape}, class_pred.shape={class_pred.shape}")
-    # print(class_score)
-    # print(class_pred)
-    conf_mask = pred[:, 4] * class_score >= SCORE_THRESHOLD
-    print(f"conf_mask.shape={conf_mask.shape}")
-    # print(conf_mask[:1000])
-
-    # reshape arrays to compatible dims for concatenation
-    class_pred = class_pred.reshape(class_pred.shape[0], 1)
-    class_score = class_score.reshape(class_score.shape[0], 1)
-    print(
-        f"class_score.reshape={class_score.shape}, class_pred.reshape={class_pred.shape}"
-    )
-
-    # detections == [x1, y1, x2, y2, obj_conf, class_conf, class_pred]
-    detections = np.concatenate((pred[:, :5], class_score, class_pred), axis=1)
-    print(f"detections.shape={detections.shape}")
-    # print(detections[:3, :])
-    det_masked = detections[conf_mask]
-    print(f"detections shape after mask: det_masked.shape={det_masked.shape}")
-    print(det_masked[:5, :])
-
-    #
-    # use TF framework for NMS
-    #
-    bboxes = det_masked[:, :4]
-    # swap x and y axes for TF NMS
-    bboxes[:, [0, 1]] = bboxes[:, [1, 0]]
-    bboxes[:, [2, 3]] = bboxes[:, [3, 2]]
-    pred_conf = pred_class[conf_mask]
-    # convert to TF tensor
-    tf_bboxes = tf.convert_to_tensor(bboxes, dtype=tf.float32)
-    tf_pred_conf = tf.convert_to_tensor(pred_conf, dtype=tf.float32)
-    print(f"tf_bboxes.shape={tf_bboxes.shape}, tf_pred_conf.shape={tf_pred_conf.shape}")
-    # reshape for TF NMS
-    tf_bboxes = tf.reshape(tf_bboxes, (1, -1, 1, 4))
-    tf_pred_conf = tf.reshape(tf_pred_conf, (1, -1, tf.shape(pred_conf)[-1]))
-    print(
-        f"tf_bboxes.reshape={tf_bboxes.shape}, tf_pred_conf.reshape={tf_pred_conf.shape}"
-    )
-
-    boxes, scores, classes, nums = tf.image.combined_non_max_suppression(
-        boxes=tf_bboxes,
-        scores=tf_pred_conf,
-        max_output_size_per_class=MAX_OUTPUT_SIZE_PER_CLASS,
-        max_total_size=MAX_TOTAL_SIZE,
-        iou_threshold=IOU_THRESHOLD,
-        score_threshold=SCORE_THRESHOLD,
-    )
-    return boxes, scores, classes, nums
-
-
 def show_image_with_bboxes(img, bboxes, scores, classes):
     height, width = img.shape[:2]
     # print(f"Image width={width}, height={height}")
@@ -261,15 +200,6 @@ def main():
     )
     print(f"img_rs.shape={img_rs.shape}")
 
-    # # rearrange from (H, W, C) to (C, H, W)
-    # img_tp = img_rs.transpose((2, 0, 1))
-    # print(f"img_tp.shape={img_tp.shape}")
-    # img_arr = np.ascontiguousarray(img_tp, dtype=np.float32)
-    # print(f"img_arr.shape={img_arr.shape}")
-    # img_arr.resize((1, 3, 416, 416))
-    # print(f"img_arr.shape post resize={img_arr.shape}")
-    # data = json.dumps({"data": img_arr.tolist()})
-
     image_size = img.shape[:2]
     image, scale = preprocess(img)
     image = torch.from_numpy(image).unsqueeze(0).to(the_device)
@@ -295,13 +225,6 @@ def main():
     # print(pred)
     # torch.save(prediction, "/tmp/prediction.pt")
     # np.savetxt("/tmp/detections_tensor.txt", detections.numpy())
-
-    # bboxes, scores, classes, nums = post_process_model_result(pred)
-    # print(
-    #     f"bboxes={bboxes.shape}({type(bboxes)}), "
-    #     f"scores={scores.shape}({type(scores)}), "
-    #     f"classes={classes.shape}({type(classes)}), nums={nums}"
-    # )
 
     bboxes, classes, scores = postprocess(prediction, scale, image_size, class_names)
 
