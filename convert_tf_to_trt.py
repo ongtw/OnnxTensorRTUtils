@@ -14,8 +14,9 @@ GPU_RAM_8G = 8000000000
 MPL = "/home/aisg/src/ongtw/PeekingDuck/peekingduck_weights/movenet/multipose_lightning"
 SPL = "/home/aisg/src/ongtw/PeekingDuck/peekingduck_weights/movenet/singlepose_lightning"
 SPT = "/home/aisg/src/ongtw/PeekingDuck/peekingduck_weights/movenet/singlepose_thunder"
+YLXT = "/home/aisg/src/ongtw/PeekingDuck/peekingduck_weights/yolox_tiny_tf"
 
-model_dir = SPT
+model_dir = YLXT
 model_out_dir = model_dir + "_fp16"
 
 # dotw: uses helper but error, helper not found...
